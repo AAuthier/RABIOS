@@ -1,0 +1,510 @@
+---
+title: "Coef Variacion"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+Ambient Temp
+Datos Ailen
+```{r}
+setwd("C:/Users/Gaby/Dropbox/Datos/R/CoefVar")
+library(tidyverse)
+library(plyr)
+library(hrbrthemes)
+library(scales)
+
+ambtemp<- read.csv('ATgerm.csv')
+
+str(ambtemp)
+names(ambtemp)[names(ambtemp) == "mat"] <- "Mat"
+ambtemp$AF <- as.factor(ambtemp$AF) 
+ambtemp$BF <- as.factor(ambtemp$BF)
+ambtemp$IT <- as.factor(ambtemp$IT)
+ambtemp$Mat <- as.factor(ambtemp$Mat)
+ambtemp$GT <- as.factor(ambtemp$GT)
+
+ambtemp$GT = factor(ambtemp$GT, c("col ", "rdr2", "rdr6", "dcl234", "ago4", "nrpd2a", "rdd", "ler "))
+ambtemp$Mat = factor(ambtemp$Mat, c("18-18", "24-18", "18-24", "24-24"))
+
+ambtemp$prop <- ambtemp$germ.18 / ambtemp$n #proporcion de germ
+
+ambtemp$speed <- ambtemp$germ.1/1 +         #velocidad de germinacion, proxy para vigor
+  (ambtemp$germ.2 - ambtemp$germ.1)/2 +
+  (ambtemp$germ.3 - ambtemp$germ.2)/3 +
+  (ambtemp$germ.4 - ambtemp$germ.3)/4 +
+  (ambtemp$germ.5 - ambtemp$germ.4)/5 +
+  (ambtemp$germ.6 - ambtemp$germ.5)/6 +
+  (ambtemp$germ.7 - ambtemp$germ.6)/7 +
+  (ambtemp$germ.8 - ambtemp$germ.7)/8 +
+  (ambtemp$germ.9 - ambtemp$germ.8)/9 +
+  (ambtemp$germ.10 - ambtemp$germ.9)/10 +
+  (ambtemp$germ.11 - ambtemp$germ.10)/11 +
+  (ambtemp$germ.12 - ambtemp$germ.11)/12 +
+  (ambtemp$germ.13 - ambtemp$germ.12)/13 +
+  (ambtemp$germ.14 - ambtemp$germ.13)/14 +
+  (ambtemp$germ.15 - ambtemp$germ.14)/15 +
+  (ambtemp$germ.16 - ambtemp$germ.15)/16 +
+  (ambtemp$germ.17 - ambtemp$germ.16)/17 +
+  (ambtemp$germ.18 - ambtemp$germ.17)/18
+
+atm <- ddply(ambtemp, c("GT", "BF", "AF", "IT", "Mat"), summarize,
+           pm = mean(prop, na.rm=T),
+           se = sd(prop, na.rm=T),
+           sm = mean(speed, na.rm=T),
+           sse = sd(speed, na.rm=T))
+
+coefvarAT <- ddply(atm, c("GT", "BF", "AF", "IT", "Mat"), summarize,
+                 cvprop = se/pm,
+                 cvspeed = sse/sm)
+
+#write.csv(coefvarAT, "AT_CoefVar.csv")
+
+#GERM PROP
+coefvarAT %>%
+  ggplot(aes(x = cvprop,y = cvspeed, shape = GT, color = Mat)) +
+  geom_point(size = 4) +
+  theme_ipsum()
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00","#CC79A7")
+
+coefvarAT %>%
+  ggplot(aes(x= Mat, y=cvprop, color= GT))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+coefvarAT %>%
+  ggplot(aes(x= GT, y=cvprop, color= Mat))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+
+##GERM SPEED
+
+coefvarAT %>%
+  ggplot(aes(x= Mat, y=cvspeed, color= GT))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+coefvarAT %>%
+  ggplot(aes(x= GT, y=cvspeed, color= Mat))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+```
+
+################################################################################
+PHOTOPERIOD
+Columbia
+```{r}
+### Col ###
+
+ppc<- read.csv('PP_Col.csv')
+
+str(ppc)
+colnames(ppc)<- c("BG", "GT", "rep", "Mat", "BF", "AF", "IT", "Plate.ID", "N", "germ.1", "germ.2", "germ.3", "germ.4", "germ.5", "germ.6", "germ.7", "germ.10", "germ.15")
+ppc$AF <- as.factor(ppc$AF) 
+ppc$BF <- as.factor(ppc$BF)
+ppc$IT <- as.factor(ppc$IT)
+ppc$Mat <- as.factor(ppc$Mat)
+ppc$GT <- as.factor(ppc$GT)
+
+ppc$GT = factor(ppc$GT, c("col", "OX-TEM1", "tem1", "fd", "ft", "soc1", "ap1"))
+ppc$Mat = factor(ppc$Mat, c("ss", "ls", "sl", "ll"))
+
+ppc$prop <- ppc$germ.15 / ppc$N #proporcion de germ
+
+ppc$speed <- ppc$germ.1/1 +         #velocidad de germinacion, proxy para vigor
+  (ppc$germ.2 - ppc$germ.1)/2 +
+  (ppc$germ.3 - ppc$germ.2)/3 +
+  (ppc$germ.4 - ppc$germ.3)/4 +
+  (ppc$germ.5 - ppc$germ.4)/5 +
+  (ppc$germ.6 - ppc$germ.5)/6 +
+  (ppc$germ.7 - ppc$germ.6)/7 +
+  (ppc$germ.10 - ppc$germ.7)/10 +
+  (ppc$germ.15 - ppc$germ.10)/15
+
+ppcm <- ddply(ppc, c("GT", "BF", "AF", "IT", "Mat"), summarize,
+           pm = mean(prop, na.rm=T),
+           se = sd(prop, na.rm=T),
+           sm = mean(speed, na.rm=T),
+           sse = sd(speed, na.rm=T))
+
+cfppc <- ddply(ppcm, c("GT", "BF", "AF", "IT", "Mat"), summarize,
+                 cvprop = se/pm,
+                 cvspeed = sse/sm)
+
+cfppc %>%
+  ggplot(aes(x= Mat, y=cvprop, color= GT))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+cfppc %>%
+  ggplot(aes(x= GT, y=cvprop, color= Mat))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+cfppc %>%
+  ggplot(aes(x= Mat, y=cvspeed, color= GT))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+cfppc %>%
+  ggplot(aes(x= GT, y=cvspeed, color= Mat))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+```
+
+Lansdberg erecta
+```{r}
+### Ler ###
+
+ppl<- read.csv('PP_Ler.csv')
+
+str(ppl)
+colnames(ppl)<- c("Plate.ID", "Mat", "GT", "IT", "rep", "N", "germ.1", "germ.2", "germ.3", "germ.4", "germ.5", "germ.6", "germ.7", "germ.10")
+
+ppl$IT <- as.factor(ppl$IT)
+ppl$Mat <- as.factor(ppl$Mat)
+ppl$GT <- as.factor(ppl$GT)
+
+ppl$GT = factor(ppl$GT, c("ler", "fd",  "ft", "soc1", "ap1"))
+ppl$Mat = factor(ppl$Mat, c("ss", "ls", "sl", "ll"))
+
+ppl$prop <- ppl$germ.10 / ppl$N #proporcion de germ
+
+ppl$speed <- ppl$germ.1/1 +         #velocidad de germinacion, proxy para vigor
+  (ppl$germ.2 - ppl$germ.1)/2 +
+  (ppl$germ.3 - ppl$germ.2)/3 +
+  (ppl$germ.4 - ppl$germ.3)/4 +
+  (ppl$germ.5 - ppl$germ.4)/5 +
+  (ppl$germ.6 - ppl$germ.5)/6 +
+  (ppl$germ.7 - ppl$germ.6)/7 +
+  (ppl$germ.10 - ppl$germ.7)/10 
+
+pplm <- ddply(ppl, c("GT", "IT", "Mat"), summarize,
+           pm = mean(prop, na.rm=T),
+           se = sd(prop, na.rm=T),
+           sm = mean(speed, na.rm=T),
+           sse = sd(speed, na.rm=T))
+
+cfppl <- ddply(pplm, c("GT", "IT", "Mat"), summarize,
+                 cvprop = se/pm,
+                 cvspeed = sse/sm)
+
+cfppl %>%
+  ggplot(aes(x= Mat, y=cvprop, color= GT))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+cfppl %>%
+  ggplot(aes(x= GT, y=cvprop, color= Mat))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+cfppl %>%
+  ggplot(aes(x= Mat, y=cvspeed, color= GT))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+
+cfppl %>%
+  ggplot(aes(x= GT, y=cvspeed, color= Mat))+
+  geom_jitter(width=0.1)+
+  scale_color_manual(values = cbPalette)+
+  facet_grid(IT~.)+
+  theme_bw()
+```
+
+################################################################################
+RADAR PLOTS
+```{r}
+#reshaping tablas de datos AMB TEMP
+
+cvATp18<- read.csv('cvATprop.csv')
+cvATp18$GT<- as.factor(cvATp18$GT)
+cvATp18$IT<- as.factor(cvATp18$IT)
+cvATp18$Mat<- as.factor(cvATp18$Mat)
+cvATp18<- cvATp18[cvATp18$IT=="18",]
+cvATp18<- cbind(cvATp18[,1], cvATp18[,3:4])
+cvATp18<- droplevels(cvATp18)
+colnames(cvATp18)<- c("GT", "Mat", "CV")
+
+cvATp24<-  read.csv('cvATprop.csv')
+cvATp24$GT<- as.factor(cvATp24$GT)
+cvATp24$IT<- as.factor(cvATp24$IT)
+cvATp24$Mat<- as.factor(cvATp24$Mat)
+cvATp24<-  cvATp24[cvATp24$IT=="24",]
+cvATp24<- cbind(cvATp24[,1], cvATp24[,3:4])
+cvATp24<- droplevels(cvATp24)
+colnames(cvATp24)<- c("GT", "Mat", "CV")
+
+
+library(reshape)
+
+wcvATp18<- reshape(cvATp18, timevar= "GT", idvar= "Mat", direction= "wide")
+colnames(wcvATp18)<- c("Mat","Col", "rdr2", "rdr6", "dcl234", "ago4", "nrpd2a", "rdd", "Ler")
+row.names(wcvATp18)<- wcvATp18$Mat
+wcvATp18<- wcvATp18[,1:8]
+#wcvATp18[1]<- NULL
+#wcvATp18 <- rbind(rep(2.5,8) , rep(0,8) , wcvATp18)
+
+wcvATp24<- reshape(cvATp24, timevar= "GT", idvar= "Mat", direction= "wide")
+colnames(wcvATp24)<- c("Mat","Col", "rdr2", "rdr6", "dcl234", "ago4", "nrpd2a", "rdd", "Ler")
+wcvATp24[3,5]<-"0"
+wcvATp24$dcl234 <- as.numeric(wcvATp24$dcl234)
+wcvATp24<- wcvATp24[,1:8]
+
+
+#ESTE NO USE
+library(fmsb)
+
+radarchart( wcvATp18,
+            cglty=1,
+            cglcol="grey",
+            cglwd=1,
+          #  pcol=cbPalette,
+            plwd=2,
+            plty=1)
+legend("topright", legend = rownames(wcvATp18[-c(1,2),]), bty = "n", pch=20 , col=cbPalette , text.col = "grey25", cex=1.2, pt.cex=3)
+
+```
+
+AMBIENT TEMP GGRADAR
+
+```{r}
+library(ggradar)
+
+ggradar(wcvATp18,
+        values.radar = c(0,0.75, 1.5),
+        grid.min = 0,
+        grid.max = 1.5,
+        background.circle.colour = "white",
+        axis.line.colour = "gray60",
+        gridline.min.colour = "gray60",
+        gridline.mid.colour = "gray60",
+        gridline.max.colour = "gray60",
+        gridline.min.linetype = 1,
+        gridline.mid.linetype = 1,
+        gridline.max.linetype = 1,
+        group.colours = cbPalette,
+        legend.position = "bottom")
+
+ggradar(wcvATp24,
+        values.radar = c(0,1.75, 2.5),
+        grid.min = 0,
+        grid.max = 2.5,
+        background.circle.colour = "white",
+        axis.line.colour = "gray60",
+        gridline.min.colour = "gray60",
+        gridline.mid.colour = "gray60",
+        gridline.max.colour = "gray60",
+        gridline.min.linetype = 1,
+        gridline.mid.linetype = 1,
+        gridline.max.linetype = 1,
+        group.colours = cbPalette,
+        legend.position = "bottom")
+
+#wcvATp18T<- t(wcvATp18)
+#colnames(wcvATp18T) <- wcvATp18T[1,]
+#names <- rownames(wcvATp18T)
+#rownames(wcvATp18T) <- NULL
+#wcvATp18T <- cbind(names,wcvATp18T)
+#wcvATp18T<- wcvATp18T[2:8,]
+#wcvATp18T<- as.data.frame(wcvATp18T)
+#colnames(wcvATp18T)<- c("GT", "T1", "T2", "T3", "T4")
+#wcvATp18T$T1<- as.numeric(wcvATp18T$T1)
+#wcvATp18T$T2<- as.numeric(wcvATp18T$T2)
+#wcvATp18T$T3<- as.numeric(wcvATp18T$T3)
+#wcvATp18T$T4<- as.numeric(wcvATp18T$T4)
+
+#ggradar(wcvATp18T,
+#        values.radar = c(0,0.75, 1.5),
+#        grid.min = 0,
+#        grid.max = 1.5,
+#        background.circle.colour = "white",
+#        axis.line.colour = "gray60",
+#        gridline.min.colour = "gray60",
+#        gridline.mid.colour = "gray60",
+#        gridline.max.colour = "gray60",
+#        gridline.min.linetype = 1,
+#        gridline.mid.linetype = 1,
+#        gridline.max.linetype = 1,
+        #group.colours = cbPalette,
+#        legend.position = "bottom")
+
+```
+
+PHOTOPERIOD
+```{r}
+## Columbia
+
+cfppcLD<- subset(cfppc, !cfppc$GT %in% c("OX-TEM1", "ap1") & cfppc$IT=="ld")
+cfppcLD2<- cbind(cfppcLD[,1], cfppcLD[,5:6])
+cfppcLD2<- droplevels(cfppcLD2)
+colnames(cfppcLD2)<- c("GT","Mat", "CV")
+
+wppcLD<- reshape(cfppcLD2, timevar= "GT", idvar= "Mat", direction= "wide")
+colnames(wppcLD)<- c("Mat", "Col", "tem1", "fd", "ft", "soc1")
+
+#ggradar(wppcLD)
+ggradar(wppcLD,
+        values.radar = c(0,0.3, 0.6),
+        grid.min = 0,
+        grid.max = 0.6,
+        background.circle.colour = "white",
+        axis.line.colour = "gray60",
+        gridline.min.colour = "gray60",
+        gridline.mid.colour = "gray60",
+        gridline.max.colour = "gray60",
+        gridline.min.linetype = 1,
+        gridline.mid.linetype = 1,
+        gridline.max.linetype = 1,
+        group.colours = cbPalette,
+        legend.position = "bottom")
+
+
+cfppcSD<- subset(cfppc, !cfppc$GT %in% c("OX-TEM1", "ap1") & cfppc$IT=="sd")
+cfppcSD2<- cbind(cfppcSD[,1], cfppcSD[,5:6])
+cfppcSD2<- droplevels(cfppcSD2)
+colnames(cfppcSD2)<- c("GT","Mat", "CV")
+
+wppcSD<- reshape(cfppcSD2, timevar= "GT", idvar= "Mat", direction= "wide")
+colnames(wppcSD)<- c("Mat", "Col", "tem1", "fd", "ft", "soc1")
+
+#ggradar(wppcSD)
+ggradar(wppcSD,
+        values.radar = c(0,0.35, 0.7),
+        grid.min = 0,
+        grid.max = 0.7,
+        background.circle.colour = "white",
+        axis.line.colour = "gray60",
+        gridline.min.colour = "gray60",
+        gridline.mid.colour = "gray60",
+        gridline.max.colour = "gray60",
+        gridline.min.linetype = 1,
+        gridline.mid.linetype = 1,
+        gridline.max.linetype = 1,
+        group.colours = cbPalette,
+        legend.position = "bottom")
+
+```
+```{r}
+# Ler
+
+cfpplLD<- subset(cfppl, cfppl$IT=="ld")
+cfpplLD2<- cbind(cfpplLD[,1], cfpplLD[,3:4])
+cfpplLD2<- droplevels(cfpplLD2)
+colnames(cfpplLD2)<- c("GT","Mat", "CV")
+
+wpplLD<- reshape(cfpplLD2, timevar= "GT", idvar= "Mat", direction= "wide")
+wpplLD<- wpplLD[,1:5]
+colnames(wpplLD)<- c("Mat", "Ler", "fd", "ft", "soc1")
+
+#ggradar(wppcLD)
+ggradar(wpplLD,
+        values.radar = c(0,0.6, 1.2),
+        grid.min = 0,
+        grid.max = 1.2,
+        background.circle.colour = "white",
+        axis.line.colour = "gray60",
+        gridline.min.colour = "gray60",
+        gridline.mid.colour = "gray60",
+        gridline.max.colour = "gray60",
+        gridline.min.linetype = 1,
+        gridline.mid.linetype = 1,
+        gridline.max.linetype = 1,
+        group.colours = cbPalette,
+        legend.position = "bottom")
+
+
+cfpplSD<- subset(cfppl, cfppl$IT=="sd")
+cfpplSD2<- cbind(cfpplSD[,1], cfpplSD[,3:4])
+cfpplSD2<- droplevels(cfpplSD2)
+colnames(cfpplSD2)<- c("GT","Mat", "CV")
+
+wpplSD<- reshape(cfpplSD2, timevar= "GT", idvar= "Mat", direction= "wide")
+wpplSD<- wpplSD[,1:5]
+colnames(wpplSD)<- c("Mat", "Ler", "fd", "ft", "soc1")
+
+#ggradar(wppcSD)
+ggradar(wpplSD,
+        values.radar = c(0,0.6, 1.2),
+        grid.min = 0,
+        grid.max = 1.2,
+        background.circle.colour = "white",
+        axis.line.colour = "gray60",
+        gridline.min.colour = "gray60",
+        gridline.mid.colour = "gray60",
+        gridline.max.colour = "gray60",
+        gridline.min.linetype = 1,
+        gridline.mid.linetype = 1,
+        gridline.max.linetype = 1,
+        group.colours = cbPalette,
+        legend.position = "bottom")
+
+```
+################################################################################
+VERNALIZACION
+Datos Clara
+```{r}
+
+v<- read.csv('Vern_germ.csv')
+
+v$GT<- as.factor(v$GT)
+v$Mat<- as.factor(v$Mat)
+v$prop<- v$germ / v$N
+
+vm <- ddply(v, c("GT", "Mat"), summarize,
+           pm = mean(prop, na.rm=T),
+           se = sd(prop, na.rm=T))
+
+cfv <- ddply(vm, c("GT", "Mat"), summarize,
+                 cvprop = se/pm)
+
+cfv$GT = factor(cfv$GT, c("Col-0","rdr2","rdr6", "dcl234","Ago__4", "nrpd2a", "rdd"))
+
+wcfv<- reshape(cfv, timevar= "GT", idvar= "Mat", direction= "wide")
+colnames(wcfv)<- c("Mat", "Ago__4", "Col-0", "dcl234", "nrpd2a", "rdd", "rdr2", "rdr6")
+wcfv<- wcfv[c(1,3,7,8,4,2,5,6)]
+
+ggradar(wcfv,
+        values.radar = c(0,0.35, 0.7),
+        grid.min = 0,
+        grid.max = 0.7,
+        background.circle.colour = "white",
+        axis.line.colour = "gray60",
+        gridline.min.colour = "gray60",
+        gridline.mid.colour = "gray60",
+        gridline.max.colour = "gray60",
+        gridline.min.linetype = 1,
+        gridline.mid.linetype = 1,
+        gridline.max.linetype = 1,
+        group.colours = cbPalette,
+        legend.position = "bottom")
+
+```
+
